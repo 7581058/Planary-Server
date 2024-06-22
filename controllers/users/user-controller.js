@@ -4,11 +4,11 @@ import {
 } from "../../services/users/user-service.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import { createDashboard } from "../../services/dashboard/dashboard-service.js";
 
 dotenv.config();
 
 const saltRounds = 10;
-
 export const register = async (req, res) => {
   try {
     const { username, email, password, birth } = req.body;
@@ -23,19 +23,17 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const userData = { ...req.body, password: hashedPassword };
+    const userResult = await createUser(userData);
 
-    createUser(userData, (err, results) => {
-      if (err) {
-        console.error("Database query error:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Internal server error",
-        });
-      }
-      res.status(200).json({
-        success: true,
-        message: "User registered successfully",
-      });
+    await createDashboard({
+      dashboard_title: "myDashboard",
+      user_id: userResult.insertId,
+      theme: "default",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User and dashboard registered successfully",
     });
   } catch (error) {
     console.error("Error creating user:", error);
