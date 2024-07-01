@@ -13,7 +13,14 @@ export const register = async (req, res) => {
   try {
     const { username, email, password, birth, agree } = req.body;
 
-    if (!username || !email || !password || !birth || !agree) {
+    if (
+      !username ||
+      !email ||
+      !password ||
+      !birth ||
+      agree === undefined ||
+      agree === null
+    ) {
       return res.status(400).json({
         success: false,
         message: "Username, email, password, birth and agree are required",
@@ -21,8 +28,13 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const convertedAgree = agree ? 1 : 0;
 
-    const userData = { ...req.body, password: hashedPassword };
+    const userData = {
+      ...req.body,
+      password: hashedPassword,
+      agree: convertedAgree,
+    };
     const userResult = await createUser(userData);
 
     await createDashboard({
