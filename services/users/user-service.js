@@ -5,15 +5,16 @@ const saltRounds = 10;
 
 export const createUser = async (userData) => {
   try {
-    const { username, email, password, birth } = userData;
+    const { username, email, password, birth, agree } = userData;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const sql = `INSERT INTO user (username, email, password, birth, create_time) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`;
+    const sql = `INSERT INTO user (username, email, password, birth, agree, create_time) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`;
 
     const [results] = await db.execute(sql, [
       username,
       email,
       hashedPassword,
       birth,
+      agree,
     ]);
 
     if (!results) {
@@ -28,7 +29,7 @@ export const createUser = async (userData) => {
 
 export const getUsers = async () => {
   try {
-    const sql = `SELECT user_id, username, email, birth, create_time FROM user`;
+    const sql = `SELECT user_id, username, email, birth, agree, create_time FROM user`;
     const [results] = await db.execute(sql);
     return results;
   } catch (error) {
@@ -58,13 +59,14 @@ export const getUserByUserEmail = async (email) => {
 
 export const updateUser = async (data) => {
   try {
-    const sql = `UPDATE user SET username = ?, email = ?, password = ?, birth = ? WHERE user_id = ?`;
+    const sql = `UPDATE user SET username = ?, email = ?, password = ?, birth = ?, agree = ?, WHERE user_id = ?`;
     const [result] = await db.execute(sql, [
       data.username,
       data.email,
       data.password,
       data.birth,
       data.user_id,
+      data.agree,
     ]);
     return result;
   } catch (error) {

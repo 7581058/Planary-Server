@@ -11,12 +11,12 @@ dotenv.config();
 const saltRounds = 10;
 export const register = async (req, res) => {
   try {
-    const { username, email, password, birth } = req.body;
+    const { username, email, password, birth, agree } = req.body;
 
-    if (!username || !email || !password || !birth) {
+    if (!username || !email || !password || !birth || !agree) {
       return res.status(400).json({
         success: false,
-        message: "Username, email, password, and birth are required",
+        message: "Username, email, password, birth and agree are required",
       });
     }
 
