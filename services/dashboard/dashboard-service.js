@@ -54,20 +54,20 @@ export const createDashboard = async (boardData) => {
   }
 };
 
-export const getDashboardList = async () => {
+export const getDashboardList = async (id) => {
   try {
     const sql = `SELECT dashboard_id, dashboard_title, theme FROM dashboards WHERE user_id = ?`;
-    const [results] = await db.execute(sql);
+    const [results] = await db.execute(sql, [id]);
     return results;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
 };
 
-export const getDashboard = async () => {
+export const getDashboard = async (dashboardId, userId) => {
   try {
     const sql = `SELECT * FROM dashboard_widgets WHERE dashboard_id = ?`;
-    const [results] = await db.execute(sql);
+    const [results] = await db.execute(sql, [dashboardId]);
     return results;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
