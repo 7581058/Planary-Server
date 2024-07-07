@@ -1,18 +1,27 @@
-import { tokenVerify } from "../utils/jwt-util.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const authJWT = (req, res, next) => {
-  if (req.headers.authorization) {
-    const token = req.headers.authorization.split("Bearer ")[1];
-    const result = tokenVerify(token);
-    if (result.success) {
-      req.id = result.id;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const result = jwt.verify(token, process.env.JWT_SECRET);
+      req.id = result.userId;
       req.role = result.role;
       next();
+    } catch (err) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
     }
   } else {
-    res.status(401).send({
+    res.status(401).json({
       success: false,
-      message: result.message,
+      message: "Authorization header missing",
     });
   }
 };
