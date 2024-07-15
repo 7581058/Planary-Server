@@ -6,7 +6,7 @@ export const createDday = async (ddayData) => {
     const { widgetId, icon, title, date } = ddayData;
 
     const lastOrder = await getLastOrderForWidget(widgetId);
-    const nextOrder = lastOrder + 1;
+    const nextOrder = lastOrder !== null ? lastOrder + 1 : 0;
 
     const sql = `INSERT INTO ddays (icon, dday_title, d_day, widget_id, d_day_order) VALUES (?, ?, ?, ?, ?)`;
 
@@ -31,14 +31,9 @@ export const createDday = async (ddayData) => {
 // 디데이 같은 위젯 마지막 순서 조회
 export const getLastOrderForWidget = async (widgetId) => {
   try {
-    const getLastOrderSql = `SELECT MAX(d_day_order) AS maxOrder FROM ddays WHERE widget_id = ?`;
-    const [result] = await db.execute(getLastOrderSql, [widgetId]);
-
-    if (result.length > 0 && result[0].maxOrder !== null) {
-      return result[0].maxOrder;
-    } else {
-      return 1;
-    }
+    const sql = `SELECT MAX(d_day_order) as lastOrder FROM ddays WHERE widget_id = ?`;
+    const [results] = await db.execute(sql, [widgetId]);
+    return results[0].lastOrder !== null ? results[0].lastOrder : -1;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
@@ -111,11 +106,24 @@ export const updateDdayCarouselSetting = async (widgetId, data) => {
 // 디데이 순서 수정
 export const updateDdayOrder = async (datas) => {
   try {
+    const results = [];
     for (const data of datas) {
       const sql = `UPDATE ddays SET d_day_order = ? WHERE dday_id = ?`;
       const [result] = await db.execute(sql, [data.order, data.id]);
-      return result;
+      results.push(result);
     }
+    return results;
+  } catch (error) {
+    throw new Error(`Database query error: ${error.message}`);
+  }
+};
+
+// 디데이 설정 테이블(dday_settings) 생성
+export const createDdaySettings = async (data) => {
+  try {
+    const sql = `INSERT INTO dday_settings (widget_id, carousel_auto) VALUES (?, ?)`;
+    const [result] = await db.execute(sql, [data.id, data.auto]);
+    return result;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
