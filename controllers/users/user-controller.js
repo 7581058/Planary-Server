@@ -1,11 +1,11 @@
 import {
-  createUser,
   getUserByUserEmail,
+  registration,
 } from "../../services/users/user-service.js";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import { createDashboard } from "../../services/dashboard/dashboard-service.js";
 import jwt from "jsonwebtoken";
+
 dotenv.config();
 
 export const register = async (req, res) => {
@@ -25,41 +25,18 @@ export const register = async (req, res) => {
       });
     }
 
-    try {
-      const userResult = await createUser(req.body);
-      if (userResult) {
-        try {
-          const dashboardResult = await createDashboard({
-            dashboard_title: "myDashboard",
-            user_id: userResult.insertId,
-            theme: "default",
-          });
-          if (dashboardResult) {
-            res.status(201).json({
-              success: true,
-              message: "User and dashboard registered successfully",
-            });
-          }
-        } catch (err) {
-          console.error("Error creating dashboard:", err);
-          return res.status(500).json({
-            success: false,
-            message: "Internal server error during dashboard creation",
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Error creating user:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error during user creation",
-      });
-    }
+    const result = await registration(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: result,
+    });
   } catch (error) {
-    console.error("Unexpected error:", error);
-    return res.status(500).json({
+    console.error("Registration error:", error);
+    res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error during registration",
     });
   }
 };
