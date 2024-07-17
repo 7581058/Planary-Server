@@ -1,4 +1,4 @@
-import db from "../../database.js";
+import pool from "../../database.js";
 
 // 디데이 추가
 export const createDday = async (ddayData) => {
@@ -10,7 +10,7 @@ export const createDday = async (ddayData) => {
 
     const sql = `INSERT INTO ddays (icon, dday_title, d_day, widget_id, d_day_order) VALUES (?, ?, ?, ?, ?)`;
 
-    const [results] = await db.execute(sql, [
+    const [results] = await pool.query(sql, [
       icon,
       title,
       date,
@@ -32,7 +32,7 @@ export const createDday = async (ddayData) => {
 export const getLastOrderForWidget = async (widgetId) => {
   try {
     const sql = `SELECT MAX(d_day_order) as lastOrder FROM ddays WHERE widget_id = ?`;
-    const [results] = await db.execute(sql, [widgetId]);
+    const [results] = await pool.query(sql, [widgetId]);
     return results[0].lastOrder !== null ? results[0].lastOrder : -1;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
@@ -58,7 +58,7 @@ export const getDdays = async (widgetId) => {
       settings.widget_id = ?
     ORDER BY
       ddays.d_day_order ASC`;
-    const [results] = await db.execute(sql, [widgetId]);
+    const [results] = await pool.query(sql, [widgetId]);
     return results;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
@@ -69,7 +69,7 @@ export const getDdays = async (widgetId) => {
 export const deleteDday = async (ddayId) => {
   try {
     const sql = `DELETE FROM ddays WHERE dday_id = ?`;
-    const [result] = await db.execute(sql, [ddayId]);
+    const [result] = await pool.query(sql, [ddayId]);
     return result;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
@@ -80,7 +80,7 @@ export const deleteDday = async (ddayId) => {
 export const updateDday = async (ddayId, data) => {
   try {
     const sql = `UPDATE ddays SET icon = ?, dday_title = ?, d_day = ? WHERE dday_id = ?`;
-    const [result] = await db.execute(sql, [
+    const [result] = await pool.query(sql, [
       data.icon,
       data.title,
       data.date,
@@ -96,7 +96,7 @@ export const updateDday = async (ddayId, data) => {
 export const updateDdayCarouselSetting = async (widgetId, data) => {
   try {
     const sql = `UPDATE dday_settings SET carousel_auto = ? WHERE widget_id = ?`;
-    const [result] = await db.execute(sql, [data.isAuto, widgetId]);
+    const [result] = await pool.query(sql, [data.isAuto, widgetId]);
     return result;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
@@ -109,7 +109,7 @@ export const updateDdayOrder = async (datas) => {
     const results = [];
     for (const data of datas) {
       const sql = `UPDATE ddays SET d_day_order = ? WHERE dday_id = ?`;
-      const [result] = await db.execute(sql, [data.order, data.id]);
+      const [result] = await pool.query(sql, [data.order, data.id]);
       results.push(result);
     }
     return results;
@@ -119,12 +119,12 @@ export const updateDdayOrder = async (datas) => {
 };
 
 // 디데이 설정 테이블(dday_settings) 생성
-export const createDdaySettings = async (data) => {
-  try {
-    const sql = `INSERT INTO dday_settings (widget_id, carousel_auto) VALUES (?, ?)`;
-    const [result] = await db.execute(sql, [data.id, data.auto]);
-    return result;
-  } catch (error) {
-    throw new Error(`Database query error: ${error.message}`);
+// registration -> createwidgets 에 연계됨
+export const createDdaySettings = async (widgetId, queryRunner) => {
+  const sql = `INSERT INTO dday_settings (widget_id, carousel_auto) VALUES (?, ?)`;
+  const [result] = await queryRunner.query(sql, [widgetId, 0]);
+  if (!result.affectedRows) {
+    throw new Error("Failed to create Dday settings: No rows affected");
   }
+  return result.insertId;
 };
