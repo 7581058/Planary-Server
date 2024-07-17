@@ -25,6 +25,10 @@ export const createUser = async (userData, connection) => {
     convertedAgree,
   ]);
 
+  if (!result.affectedRows) {
+    throw new Error("Failed to create user: No rows affected");
+  }
+
   return { id: result.insertId, ...userData };
 };
 
