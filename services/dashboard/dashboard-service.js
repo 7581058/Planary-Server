@@ -1,49 +1,61 @@
-import db from "../../database.js";
-import { defaultWidgets } from "../../constants/defaultWigets.js";
+import pool from "../../database.js";
+import { createDdaySettings } from "../widget/dday-service.js";
 
-export const createWidgets = async (dashboardId, widgetsData) => {
+// 위젯 생성
+export const createWidgets = async (dashboardData, widgetsData, connection) => {
+  const queryRunner = connection || pool;
   try {
-    const widgetSql = `INSERT INTO dashboard_widgets (dashboard_id, i, x, y, w, h, minW, maxW, minH, maxH, component_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const widgetSql = `INSERT INTO dashboard_widgets 
+      (dashboard_id, i, x, y, w, h, minW, maxW, minH, maxH, component_type) 
+      VALUES ?`;
 
-    for (const widget of widgetsData) {
-      const { i, x, y, w, h, minW, maxW, minH, maxH, component } = widget;
+    const values = widgetsData.map((widget) => [
+      dashboardData.id,
+      widget.i,
+      widget.x,
+      widget.y,
+      widget.w,
+      widget.h,
+      widget.minW,
+      widget.maxW,
+      widget.minH,
+      widget.maxH,
+      widget.component,
+    ]);
 
-      const [results] = await db.execute(widgetSql, [
-        dashboardId,
-        i,
-        x,
-        y,
-        w,
-        h,
-        minW,
-        maxW,
-        minH,
-        maxH,
-        component,
-      ]);
+    const [results] = await queryRunner.query(widgetSql, [values]);
 
-      if (!results || results.affectedRows === 0) {
-        throw new Error("Database query error: Empty result");
-      }
+    if (!results.affectedRows) {
+      throw new Error("Failed to create widgets: No rows affected");
+    }
 
-      if (component === "dday") {
-        const widgetId = results.insertId;
-        const ddayData = {
-          id: widgetId,
-          auto: 0,
-        };
-        await createDdaySettings(ddayData);
+    const ddayWidgetIds = [];
+    for (let i = 0; i < widgetsData.length; i++) {
+      if (widgetsData[i].component === "dday") {
+        ddayWidgetIds.push(results.insertId + i);
       }
     }
 
-    return true;
+    for (const ddayWidgetId of ddayWidgetIds) {
+      await createDdaySettings(ddayWidgetId, queryRunner);
+    }
+
+    return {
+      id: results.insertId,
+      ddayWidgetIds,
+    };
   } catch (error) {
-    console.error("Error in createDashboard:", error);
-    throw new Error(`Database query error: ${error.message}`);
+    console.error("Error in create Widget:", error);
+    if (!connection) {
+      throw new Error("Failed to create Widget");
+    }
+    throw error;
   }
 };
 
-export const createDashboard = async (boardData) => {
+// 대시보드 생성
+export const createDashboard = async (boardData, connection) => {
+  const queryRunner = connection || pool;
   try {
     const { dashboard_title, user_id, theme } = boardData;
 
@@ -52,23 +64,24 @@ export const createDashboard = async (boardData) => {
 
     const sql = `INSERT INTO dashboards (dashboard_title, user_id, theme,dashboard_order, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`;
 
-    const [results] = await db.execute(sql, [
+    const [results] = await queryRunner.query(sql, [
       dashboard_title,
       user_id,
       theme,
       nextOrder,
     ]);
 
-    if (!results) {
-      throw new Error("Database query error: Empty result");
+    if (!results.affectedRows) {
+      throw new Error("Failed to create dashboard: No rows affected");
     }
-    const dashboardId = results.insertId;
-    await createWidgets(dashboardId, defaultWidgets);
 
-    return dashboardId;
+    return { id: results.insertId, ...boardData };
   } catch (error) {
-    console.error("Error in createDashboard:", error);
-    throw new Error(`Database query error: ${error.message}`);
+    console.error("Error in create Dashboard:", error);
+    if (!connection) {
+      throw new Error("Failed to create Dashboard");
+    }
+    throw error;
   }
 };
 
@@ -76,47 +89,51 @@ export const createDashboard = async (boardData) => {
 export const getLastOrderForDashboard = async (userId) => {
   try {
     const sql = `SELECT MAX(dashboard_order) as lastOrder FROM dashboards WHERE user_id = ?`;
-    const [results] = await db.execute(sql, [userId]);
+    const [results] = await pool.query(sql, [userId]);
     return results[0].lastOrder !== null ? results[0].lastOrder : -1;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
 };
 
+// 유저아이디로 대시보드 목록 조회
 export const getDashboardList = async (id) => {
   try {
     const sql = `SELECT dashboard_id, dashboard_title, theme FROM dashboards WHERE user_id = ?`;
-    const [results] = await db.execute(sql, [id]);
+    const [results] = await pool.query(sql, [id]);
     return results;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
 };
 
-export const getDashboard = async (dashboardId, userId) => {
+// 대시보드 아이디로 대시보드 위젯 전체 조회
+export const getDashboard = async (dashboardId) => {
   try {
     const sql = `SELECT * FROM dashboard_widgets WHERE dashboard_id = ?`;
-    const [results] = await db.execute(sql, [dashboardId]);
+    const [results] = await pool.query(sql, [dashboardId]);
     return results;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
 };
 
+// 대시보드 정보(테마, 타이틀) 수정
 export const updateDashboard = async (data) => {
   try {
     const sql = `UPDATE dashboards SET theme = ?, dashboard_title = ? WHERE dashboard_id = ?`;
-    const [result] = await db.execute(sql, [data.theme, data.dashboard_title]);
+    const [result] = await pool.query(sql, [data.theme, data.dashboard_title]);
     return result;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
   }
 };
 
+// 대시보드 삭제
 export const deleteDashboard = async (id) => {
   try {
     const sql = `DELETE FROM dashboards WHERE dashboard_id = ?`;
-    const [result] = await db.execute(sql, [id]);
+    const [result] = await pool.query(sql, [id]);
     return result;
   } catch (error) {
     throw new Error(`Database query error: ${error.message}`);
