@@ -79,6 +79,10 @@ export const getBoard = async (req, res) => {
         w: item.w,
         h: item.h,
         component: item.component_type,
+        maxW: item.maxW,
+        maxH: item.maxH,
+        minW: item.minW,
+        minH: item.minH,
       }));
 
       return res.status(200).json({
