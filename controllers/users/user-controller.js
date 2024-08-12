@@ -36,7 +36,7 @@ export const register = async (req, res) => {
     console.error("Registration error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error during registration",
+      message: "Internal server error",
     });
   }
 };
@@ -47,9 +47,10 @@ export const login = async (req, res) => {
     const results = await getUserByUserEmail(email);
 
     if (!results) {
-      return res.status(402).json({
+      return res.status(401).json({
         success: false,
-        message: "Invalid Email or Password",
+        message:
+          "Invalid credentials. Please check your username and password.",
       });
     } else {
       const isMatch = await bcrypt.compare(password, results.password);
