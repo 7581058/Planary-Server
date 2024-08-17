@@ -30,7 +30,6 @@ export const createBoard = async (req, res) => {
 };
 
 // 대시보드 목록 조회
-//todo: dashboard_order 순서대로 출력되도록 수정 필요
 export const getBoardList = async (req, res) => {
   try {
     const results = await getDashboardList(req.id);
@@ -65,7 +64,7 @@ export const getBoardList = async (req, res) => {
 
 // 대시보드 아이디로 해당 대시보드 전체 위젯 조회
 export const getBoard = async (req, res) => {
-  const boardId = req.params.id;
+  const boardId = req.params.boardId;
 
   try {
     const results = await getDashboard(boardId);
