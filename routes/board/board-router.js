@@ -2,6 +2,7 @@ import express from "express";
 import {
   getBoard,
   getBoardList,
+  createBoard,
 } from "../../controllers/dashboard/dashboard-controller.js";
 import { authJWT } from "../../auth/auth-jwt.js";
 const boardRouter = express.Router();
