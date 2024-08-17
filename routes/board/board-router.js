@@ -6,19 +6,19 @@ import {
 import { authJWT } from "../../auth/auth-jwt.js";
 const boardRouter = express.Router();
 
-// 대시보드 생성
-//boardRouter.post("/create", createBoard);
+// 대시보드 생성 '/dashboard/create'
+boardRouter.post("/create", createBoard);
 
-// 대시보드 목록 조회
+// 대시보드 목록 조회 '/dashboard/list'
 boardRouter.get("/list", authJWT, getBoardList);
 
-// 대시보드 조회
-boardRouter.get("/:id", authJWT, getBoard);
+// 대시보드 조회 '/dashboard/22'
+boardRouter.get("/:boardId", authJWT, getBoard);
 
-// 대시보드 수정
-//boardRouter.post("/dashboard", createBoard);
+// 대시보드 수정 '/dashboard/22
+//boardRouter.put("/:boardId", createBoard);
 
-//토큰검증 필요시 (엔드포인트, 토큰검증, 다음콜백)
-//router.get('/profile', authJWT, editProfile);
+// 대시보드 수정 '/dashboard/22
+//boardRouter.delete("/boardId", createBoard);
 
 export default boardRouter;
