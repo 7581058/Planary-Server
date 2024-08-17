@@ -10,17 +10,18 @@ export const createBoard = async (req, res) => {
     const results = await createDashboard(req.body);
 
     if (!results) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to create dashboard",
       });
     }
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Create Dashboard successfully",
+      message: "Dashboard created successfully",
     });
   } catch (err) {
+    console.error("Error creating dashboard:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -28,14 +29,17 @@ export const createBoard = async (req, res) => {
   }
 };
 
-// 대시보드 목록
+// 대시보드 목록 조회
+//todo: dashboard_order 순서대로 출력되도록 수정 필요
 export const getBoardList = async (req, res) => {
   try {
     const results = await getDashboardList(req.id);
-    if (!results || results.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No dashboards found",
+
+    if (results.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No dashboards found for this user",
+        boardList: [],
       });
     }
 
@@ -47,10 +51,11 @@ export const getBoardList = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Get Dashboard List successfully",
+      message: "Dashboard list retrieved successfully",
       boardList: formattedResults,
     });
   } catch (err) {
+    console.error("Error retrieving dashboard list:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -58,47 +63,44 @@ export const getBoardList = async (req, res) => {
   }
 };
 
-// 대시보드
+// 대시보드 아이디로 해당 대시보드 전체 위젯 조회
 export const getBoard = async (req, res) => {
-  if (req.id) {
-    const boardId = req.params.id;
-    try {
-      const results = await getDashboard(boardId);
+  const boardId = req.params.id;
 
-      if (!results) {
-        return res.json({
-          success: false,
-          message: "Internal server error",
-        });
-      }
+  try {
+    const results = await getDashboard(boardId);
 
-      const formattedResults = results.map((item) => ({
-        i: item.widget_id.toString(),
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-        component: item.component_type,
-        maxW: item.maxW,
-        maxH: item.maxH,
-        minW: item.minW,
-        minH: item.minH,
-      }));
-
+    if (results.length === 0) {
       return res.status(200).json({
         success: true,
-        message: "Get Dashboard successfully",
-        lg: formattedResults,
-      });
-    } catch (err) {
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error",
+        message: "No widgets found for this dashboard",
+        lg: [],
       });
     }
+
+    const formattedResults = results.map((item) => ({
+      i: item.widget_id.toString(),
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+      component: item.component_type,
+      maxW: item.maxW,
+      maxH: item.maxH,
+      minW: item.minW,
+      minH: item.minH,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Dashboard retrieved successfully",
+      lg: formattedResults,
+    });
+  } catch (err) {
+    console.error("Error retrieving dashboard:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
-  return res.status(500).json({
-    success: false,
-    message: "Internal server error",
-  });
 };
