@@ -99,7 +99,15 @@ export const getLastOrderForDashboard = async (userId) => {
 // 유저아이디로 대시보드 목록 조회
 export const getDashboardList = async (id) => {
   try {
-    const sql = `SELECT dashboard_id, dashboard_title, theme FROM dashboards WHERE user_id = ?`;
+    const sql = `
+    SELECT 
+      dashboard_id, dashboard_title, theme 
+    FROM 
+      dashboards 
+    WHERE 
+      user_id = ? 
+    ORDER BY
+      dashboard_order ASC`;
     const [results] = await pool.query(sql, [id]);
     return results;
   } catch (error) {
