@@ -9,18 +9,20 @@ import {
 
 // 디데이 조회
 export const getDdayList = async (req, res) => {
+  const widgetId = req.params.widgetId;
   try {
-    const widgetId = req.params.widgetId;
     const results = await getDdays(widgetId);
+    const isAuto = results[0].carousel_auto;
 
-    if (!results || results.length === 0) {
-      return res.status(404).json({
-        success: false,
+    if (results.length === 0) {
+      return res.status(200).json({
+        success: true,
         message: "No ddays found",
+        isAuto: isAuto,
+        ddayList: [],
       });
     }
 
-    const isAuto = results[0].carousel_auto;
     const formattedResults = results
       .filter((item) => item.dday_id !== "null")
       .map((item) => ({
@@ -33,7 +35,7 @@ export const getDdayList = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Get Dday List successfully",
+      message: "Dday list retrieved successfully",
       isAuto: isAuto,
       ddayList: formattedResults,
     });
@@ -48,20 +50,30 @@ export const getDdayList = async (req, res) => {
 // 디데이 추가
 export const addDday = async (req, res) => {
   try {
+    const { widgetId, title, icon, date } = req.body;
+
+    if (!widgetId || !title || !icon || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "WidgetId, title, icon, date are required",
+      });
+    }
+
     const results = await createDday(req.body);
 
     if (!results) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to create dday",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Create Dday successfully",
+      message: "Dday created successfully",
     });
   } catch (err) {
+    console.error("Error creating dday:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -76,15 +88,15 @@ export const deleteDdayController = async (req, res) => {
     const results = await deleteDday(ddayId);
 
     if (!results) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to delete dday",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Delete Dday successfully",
+      message: "Dday deleted successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -101,15 +113,15 @@ export const updateDdayController = async (req, res) => {
     const results = await updateDday(ddayId, req.body);
 
     if (!results) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to update dday",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Update Dday successfully",
+      message: "Dday updated successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -126,15 +138,15 @@ export const updateDdayCarouselSettingController = async (req, res) => {
     const results = await updateDdayCarouselSetting(widgetId, req.body);
 
     if (!results) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to update carousel setting",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Update Dday Carousel setting successfully",
+      message: "Dday carousel setting updated successfully",
     });
   } catch (err) {
     console.log(err);
@@ -150,14 +162,14 @@ export const updateDdayOrderController = async (req, res) => {
   try {
     const results = await updateDdayOrder(req.body);
     if (!results) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to update dday order",
       });
     }
     return res.status(200).json({
       success: true,
-      message: "Update Dday Order successfully",
+      message: "Dday Order updated successfully",
     });
   } catch (err) {
     return res.status(500).json({
